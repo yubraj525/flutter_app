@@ -1,94 +1,50 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_app/models/weather_model.dart';
 
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+class HomePage extends StatefulWidget {
+  const new({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+
+  @override
+  void initState() {
+    super.initState();
+    print("init state");
+  }
+ 
+  Future<Weather> fetchWeatherData() async{
+    Dio dio = Dio();
+    final response = await dio.get("https://api.open-meteo.com/v1/forecast?latitude=52.52&longitude=13.41&current=temperature_2m,wind_speed_10m&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m");
+   
+    return Weather.fromJson(response.data);
+  }
 
   @override
   Widget build(BuildContext context) {
-    List<String> tasks = [];
-    tasks.add("Task 1");
-    tasks.add("Task 2");
-    return Scaffold(
-      appBar: AppBar(title: Text("to-do")),
-      // body: Column(
-      //   children: [
-      //     Padding(
-      //       padding: EdgeInsets.all(15.0),
-      //       child: Column(
-      //         children: [
-      //           TextField(
-      //             decoration: InputDecoration(
-      //               hintText: "Enter a task",
-      //               enabledBorder: UnderlineInputBorder(
-      //                 borderSide: BorderSide(color: Colors.grey),
-      //               ),
-      //             ),
-      //           ),
-      //           SizedBox(height: 10),
-      //           ElevatedButton(onPressed: () {}, child: Text("Add Task")),
-      //         ],
-      //       ),
-      //     ),
-      //   ],
-      // ),
-      body: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: ListView.builder(
-          itemCount: tasks.length,
-          itemBuilder: (context, index) {
-            return Container(
-              margin: EdgeInsets.symmetric(vertical: 4.0),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8.0),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.5),
-                    spreadRadius: 2,
-                    blurRadius: 5,
-                    offset: Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: ListTile(
-                title: Text(tasks[index]),
-                trailing: Checkbox(value: false, onChanged: (value) {}),
-              ),
-            );
-          },
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          showDialog(
-            context: context,
-            builder: (context) {
-              return AlertDialog(
-                title: Text("Add Task"),
-                content: TextField(
-                  decoration: InputDecoration(hintText: "Enter a task"),
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                    child: Text("Cancel"),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      // Add task logic here
-                      Navigator.of(context).pop();
-                    },
-                    child: Text("Add"),
-                  ),
-                ],
-              );
-            },
+      return FutureBuilder(future: fetchWeatherData(), builder: (context, snapshot) {
+        if(snapshot.connectionState == ConnectionState.waiting){
+          return const Center(child: CircularProgressIndicator(),);
+        }else if(snapshot.hasError){
+          return Center(child: Text("Error: ${snapshot.error}"),);
+        }else if(snapshot.hasData){
+          final weather = snapshot.data!;
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text("City: ${weather.city}"),
+                Text("Temperature: ${weather.temperature}"),
+              ],
+            ),
           );
-        },
-        child: Icon(Icons.add),
-      ),
-    );
+        }else{
+          return const Center(child: Text("No data"),);
+        }
+      },);
   }
 }
